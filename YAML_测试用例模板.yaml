@@ -1,0 +1,134 @@
+# Midscene 标准测试用例 - 百度搜索功能测试
+# 文档参考: https://midscenejs.com/zh/usage.html
+
+# 环境配置
+env:
+  type: web
+  url: https://www.baidu.com
+  headless: false  # 设置为 true 可以无头模式运行
+
+# 测试任务列表
+tasks:
+  # 任务 1: 基础搜索测试
+  - name: "百度搜索 - 基础流程"
+    description: "测试百度搜索的完整流程"
+    flow:
+      # 步骤 1: 验证页面加载
+      - aiAssert: "页面已完全加载,显示百度搜索框"
+
+      # 步骤 2: 定位并点击搜索框 (使用 aiInput 更高效)
+      - aiInput:
+          locate: "搜索输入框"
+          value: "Midscene.js AI 自动化"
+
+      # 步骤 3: 点击搜索按钮
+      - aiTap: "百度一下按钮"
+
+      # 步骤 4: 等待搜索结果加载
+      - aiWaitFor:
+          assertion: "搜索结果列表已显示"
+          timeoutMs: 10000
+
+      # 步骤 5: 提取搜索结果 (保存为变量)
+      - aiQuery:
+          demand: |
+            提取前5条搜索结果,返回 JSON 数组,每项包含:
+            - title: 标题文字
+            - url: 链接地址
+            - description: 摘要描述
+          saveAs: "searchResults"
+
+      # 步骤 6: 验证搜索结果
+      - aiAssert: "搜索结果中至少有一条包含 'Midscene' 关键词"
+
+  # 任务 2: 百度热搜榜测试
+  - name: "百度热搜榜 - 数据提取"
+    description: "测试从百度首页提取热搜榜数据"
+    flow:
+      # 步骤 1: 返回首页 (如果当前不在首页)
+      - aiAction: "如果当前页面不是百度首页,则点击百度 logo 返回首页"
+
+      # 步骤 2: 提取热搜榜数据
+      - aiQuery:
+          demand: |
+            提取百度热搜榜的前10条数据,返回 JSON 数组,每项包含:
+            - rank: 排名 (数字)
+            - title: 热搜标题
+            - hotValue: 热度值 (如果显示)
+          saveAs: "hotSearchList"
+
+      # 步骤 3: 验证数据完整性
+      - aiAssert: "热搜榜至少包含5条数据"
+
+      # 步骤 4: 点击第一条热搜
+      - aiTap: "热搜榜第一条"
+
+      # 步骤 5: 验证跳转成功
+      - aiWaitFor:
+          assertion: "页面已跳转到搜索结果页"
+          timeoutMs: 5000
+
+  # 任务 3: 复杂交互 - 图片搜索
+  - name: "百度图片搜索 - 复杂交互"
+    description: "测试切换到图片搜索并验证结果"
+    flow:
+      # 步骤 1: 返回首页
+      - aiAction: "访问百度首页 https://www.baidu.com"
+
+      # 步骤 2: 点击图片搜索入口
+      - aiTap: "图片搜索链接或入口"
+
+      # 步骤 3: 等待图片搜索页面加载
+      - aiWaitFor:
+          assertion: "图片搜索页面已加载完成"
+          timeoutMs: 10000
+
+      # 步骤 4: 输入搜索关键词
+      - aiInput:
+          locate: "图片搜索输入框"
+          value: "风景壁纸"
+
+      # 步骤 5: 执行搜索
+      - aiTap: "搜索按钮"
+
+      # 步骤 6: 等待图片加载
+      - aiWaitFor:
+          assertion: "至少显示了10张图片"
+          timeoutMs: 15000
+
+      # 步骤 7: 提取图片信息
+      - aiQuery:
+          demand: |
+            提取前5张图片的信息,返回 JSON 数组,每项包含:
+            - alt: 图片描述文字
+            - size: 图片尺寸 (如果显示)
+          saveAs: "imageResults"
+
+      # 步骤 8: 点击第一张图片查看大图
+      - aiTap: "第一张图片"
+
+      # 步骤 9: 验证大图显示
+      - aiAssert: "大图预览窗口已打开"
+
+  # 任务 4: 边界情况测试
+  - name: "边界情况 - 空搜索和特殊字符"
+    description: "测试特殊输入场景"
+    flow:
+      # 场景 1: 空搜索
+      - aiAction: "访问百度首页"
+      - aiTap: "百度一下按钮"
+      - aiAssert: "输入框提示 '请输入搜索内容' 或保持在当前页面"
+
+      # 场景 2: 特殊字符搜索
+      - aiInput:
+          locate: "搜索输入框"
+          value: "C++ @ 编程 #教程"
+      - aiTap: "百度一下按钮"
+      - aiWaitFor:
+          assertion: "搜索结果页面加载完成"
+          timeoutMs: 10000
+      - aiAssert: "搜索结果中包含相关编程教程内容"
+
+# 测试后清理 (可选)
+cleanup:
+  - aiAction: "关闭所有打开的标签页"

@@ -12,21 +12,31 @@ async function main() {
 
   // Launch Puppeteer browser directly
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false, // 改为 false，可以看到浏览器界面
     defaultViewport: null,
     executablePath: undefined, // Let puppeteer find Chrome automatically
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-blink-features=AutomationControlled', // 防止被识别为自动化
+    ],
   });
 
   const puppeteerPage = await browser.newPage();
 
+  // 设置更长的超时时间，防止页面导航时超时
+  puppeteerPage.setDefaultNavigationTimeout(60000); // 60秒
+  puppeteerPage.setDefaultTimeout(30000); // 30秒
+
   // Navigate to the test page
   await puppeteerPage.goto(
-    'https://lf3-static.bytednsdoc.com/obj/eden-cn/nupipfups/Midscene/contacts3.html',
+    'https://www.baidu.com',
+    { waitUntil: 'networkidle2' } // 等待网络空闲
   );
 
   await puppeteerPage.setViewport({
-    width: 1280,
-    height: 768,
+    width: 1920, // 改为更大的视口
+    height: 1080,
   });
 
   // Create the agent with the Puppeteer page

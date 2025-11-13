@@ -1,0 +1,126 @@
+# 测试用例: 数字浙江统一社会信用代码查询
+# 功能: 通过百度搜索找到数字浙江百科页面，提取统一社会信用代码
+# 作者: Auto Test System
+# 日期: 2025-01-13
+
+# 环境配置
+env:
+  type: web
+  url: https://www.baidu.com
+  headless: false  # 可视化模式，方便调试
+  viewport:
+    width: 1920
+    height: 1080
+
+# 测试任务
+tasks:
+  - name: "数字浙江 - 统一社会信用代码查询"
+    description: "通过百度百科查询数字浙江的统一社会信用代码"
+    flow:
+      # ========== 步骤 1: 百度搜索 ==========
+      - name: "验证页面加载"
+        aiAssert: "百度首页已加载，搜索框可见"
+
+      - name: "输入搜索关键词"
+        aiInput:
+          locate: "搜索输入框"
+          value: "数字浙江"
+        description: "在百度搜索框中输入 '数字浙江'"
+
+      - name: "执行搜索"
+        aiTap: "百度一下按钮"
+        description: "点击搜索按钮"
+
+      - name: "等待搜索结果"
+        aiWaitFor:
+          assertion: "搜索结果页面已加载完成"
+          timeoutMs: 10000
+
+      # ========== 步骤 2: 定位并点击百度百科链接 ==========
+      - name: "查找百度百科链接"
+        aiAssert: "搜索结果中包含数字浙江百度百科的链接"
+
+      - name: "点击百度百科"
+        aiTap: "数字浙江百度百科链接或数字浙江_百度百科"
+        description: "点击进入百度百科页面"
+
+      - name: "等待百科页面加载"
+        aiWaitFor:
+          assertion: "百度百科页面已完全加载"
+          timeoutMs: 15000
+
+      # ========== 步骤 3: 查找统一社会信用代码（带滚动逻辑）==========
+      - name: "检查信用代码是否可见"
+        aiQuery:
+          demand: |
+            判断当前页面是否显示了"统一社会信用代码"字段。
+            返回 JSON: {"visible": true/false, "message": "说明"}
+          saveAs: "visibilityCheck"
+        description: "检查统一社会信用代码是否在当前视野内"
+
+      # 如果不可见，执行滚动
+      - name: "向下滚动页面"
+        aiScroll:
+          direction: "down"
+          distance: 500
+        condition: "如果上一步返回 visible=false"
+        description: "向下滚动 500 像素"
+
+      - name: "再次检查信用代码"
+        aiWaitFor:
+          assertion: "统一社会信用代码字段已出现在页面中"
+          timeoutMs: 5000
+        description: "等待统一社会信用代码出现"
+
+      # ========== 步骤 4: 提取统一社会信用代码 ==========
+      - name: "提取信用代码数据"
+        aiQuery:
+          demand: |
+            从百度百科页面中提取"统一社会信用代码"的值。
+            返回 JSON 格式:
+            {
+              "creditCode": "统一社会信用代码的具体数值",
+              "organizationName": "组织名称（如果有）",
+              "foundLocation": "找到信用代码的页面位置描述"
+            }
+            如果找不到，返回 {"creditCode": null, "error": "未找到"}
+          saveAs: "creditCodeData"
+        description: "提取统一社会信用代码及相关信息"
+
+      # ========== 步骤 5: 验证和截图 ==========
+      - name: "验证信用代码格式"
+        aiAssert: "统一社会信用代码已提取成功，格式正确（18位数字或字母组合）"
+
+      - name: "截图保存"
+        aiAction: "将当前页面中包含统一社会信用代码的区域进行截图"
+        description: "对信用代码区域进行截图（Midscene会自动在报告中包含截图）"
+
+      # ========== 步骤 6: 输出结果 ==========
+      - name: "输出最终结果"
+        aiQuery:
+          demand: |
+            总结测试结果，返回 JSON:
+            {
+              "success": true/false,
+              "creditCode": "提取到的信用代码",
+              "screenshot": "截图已保存在报告中",
+              "timestamp": "当前时间",
+              "pageUrl": "当前页面 URL"
+            }
+          saveAs: "testResult"
+
+# 测试报告配置
+report:
+  enabled: true
+  outputDir: "./midscene_run"
+  format: "html"
+  includeSc reenshots: true
+  includeTimeline: true
+  customFields:
+    testCase: "数字浙江统一社会信用代码查询"
+    priority: "P0"
+    tags: ["百度", "百科", "信用代码", "自动化"]
+
+# 执行后清理（可选）
+cleanup:
+  - aiAction: "返回百度首页"
